@@ -1,0 +1,6 @@
+@RetailPOS.AuthService_HostAddress = http://localhost:5151
+
+GET {{RetailPOS.AuthService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

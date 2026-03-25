@@ -1,0 +1,6 @@
+@RetailPOS.CatalogService_HostAddress = http://localhost:5145
+
+GET {{RetailPOS.CatalogService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

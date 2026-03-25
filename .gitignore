@@ -1,0 +1,11 @@
+bin/
+obj/
+.vs/
+.idea/
+.vscode/
+node_modules/
+dist/
+coverage/
+logs/
+.angular/
+.dotnet/

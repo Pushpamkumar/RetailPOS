@@ -1,0 +1,21 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Gateway/">
+    <Project Path="src/Gateway/RetailPOS.Gateway/RetailPOS.Gateway.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/">
+    <Project Path="src/Services/RetailPOS.AdminService/RetailPOS.AdminService.csproj" />
+    <Project Path="src/Services/RetailPOS.AuthService/RetailPOS.AuthService.csproj" />
+    <Project Path="src/Services/RetailPOS.BillingService/RetailPOS.BillingService.csproj" />
+    <Project Path="src/Services/RetailPOS.CatalogService/RetailPOS.CatalogService.csproj" />
+  </Folder>
+  <Folder Name="/src/Shared/">
+    <Project Path="src/Shared/RetailPOS.Shared/RetailPOS.Shared.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/RetailPOS.AdminService.Tests/RetailPOS.AdminService.Tests.csproj" />
+    <Project Path="tests/RetailPOS.AuthService.Tests/RetailPOS.AuthService.Tests.csproj" />
+    <Project Path="tests/RetailPOS.BillingService.Tests/RetailPOS.BillingService.Tests.csproj" />
+    <Project Path="tests/RetailPOS.CatalogService.Tests/RetailPOS.CatalogService.Tests.csproj" />
+  </Folder>
+</Solution>
