@@ -135,7 +135,7 @@ import {
         </div>
 
         <div class="grid" *ngIf="products.length > 0">
-          <div class="panel subtle-panel" *ngFor="let product of products">
+          <div class="panel subtle-panel" *ngFor="let product of products" [class.highlight-card]="product.productId === recentProductId">
             <div class="list-row">
               <strong>{{ product.productName }}</strong>
               <span class="chip" [class.success]="product.isActive">{{ product.isActive ? "Active" : "Inactive" }}</span>
@@ -158,6 +158,7 @@ export class ProductsComponent implements OnInit {
   isSavingProduct = false;
   isSavingCategory = false;
   isSavingTax = false;
+  recentProductId: number | null = null;
 
   readonly form;
   readonly categoryForm;
@@ -200,9 +201,11 @@ export class ProductsComponent implements OnInit {
   }
 
   reload(): void {
-    this.adminApi.getProducts().subscribe((res) => (this.products = res.items ?? []));
-    this.adminApi.getCategories().subscribe((res) => (this.categories = res));
-    this.adminApi.getTaxes().subscribe((res) => (this.taxes = res));
+    this.adminApi.getProducts().subscribe((res) => {
+      this.products = (res.items ?? []).slice().sort((a, b) => b.productId - a.productId);
+    });
+    this.adminApi.getCategories().subscribe((res) => (this.categories = res.slice().sort((a, b) => a.sortOrder - b.sortOrder)));
+    this.adminApi.getTaxes().subscribe((res) => (this.taxes = res.slice().sort((a, b) => a.taxCode.localeCompare(b.taxCode))));
   }
 
   save(): void {
@@ -229,8 +232,9 @@ export class ProductsComponent implements OnInit {
     }).pipe(
       finalize(() => (this.isSavingProduct = false))
     ).subscribe({
-      next: () => {
+      next: (created) => {
         this.notificationService.success("Product saved successfully.");
+        this.recentProductId = created.productId;
         this.form.patchValue({
           sku: "",
           barcode: "",
@@ -244,7 +248,7 @@ export class ProductsComponent implements OnInit {
           reorderLevel: 0,
           isWeighable: false
         });
-        this.reload();
+        this.products = [created, ...this.products.filter((product) => product.productId !== created.productId)];
       },
       error: (error) => this.notificationService.error(error?.error?.detail ?? "Failed to save product.")
     });
@@ -268,10 +272,11 @@ export class ProductsComponent implements OnInit {
     }).pipe(
       finalize(() => (this.isSavingCategory = false))
     ).subscribe({
-      next: () => {
+      next: (created) => {
         this.notificationService.success("Category created.");
         this.categoryForm.reset({ categoryCode: "", categoryName: "" });
-        this.reload();
+        this.categories = [...this.categories.filter((category) => category.categoryId !== created.categoryId), created]
+          .sort((a, b) => a.sortOrder - b.sortOrder);
       },
       error: (error) => this.notificationService.error(error?.error?.detail ?? "Failed to create category.")
     });
@@ -296,10 +301,11 @@ export class ProductsComponent implements OnInit {
     }).pipe(
       finalize(() => (this.isSavingTax = false))
     ).subscribe({
-      next: () => {
+      next: (created) => {
         this.notificationService.success("Tax configuration created.");
         this.taxForm.reset({ taxCode: "", taxName: "", taxRate: 0, isTaxInclusive: false });
-        this.reload();
+        this.taxes = [...this.taxes.filter((tax) => tax.taxId !== created.taxId), created]
+          .sort((a, b) => a.taxCode.localeCompare(b.taxCode));
       },
       error: (error) => this.notificationService.error(error?.error?.detail ?? "Failed to create tax.")
     });

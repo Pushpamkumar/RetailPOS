@@ -12,7 +12,7 @@ export class RoleGuard implements CanActivate {
     if (!allowed || (role && allowed.includes(role))) {
       return true;
     }
-    this.router.navigate(["/auth/login"]);
+    this.router.navigate([this.authService.getLandingRoute(role)]);
     return false;
   }
 }

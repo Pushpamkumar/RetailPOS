@@ -14,6 +14,15 @@ export interface DashboardKpi {
   topProductRevenue: number;
 }
 
+export interface SalesSummary {
+  totalRevenue: number;
+  billCount: number;
+  avgBillValue: number;
+  totalDiscount: number;
+  totalTax: number;
+  grossRevenue: number;
+}
+
 export interface ProductCreateRequest {
   sku: string;
   barcode?: string | null;
@@ -127,6 +136,10 @@ export class AdminApiService {
 
   getDashboard(storeId: number): Observable<DashboardKpi> {
     return this.http.get<DashboardKpi>(`/gateway/admin/dashboard?storeId=${storeId}`);
+  }
+
+  getSalesSummary(storeId: number, from: string, to: string): Observable<SalesSummary> {
+    return this.http.get<SalesSummary>(`/gateway/admin/reports/sales?storeId=${storeId}&from=${from}&to=${to}`);
   }
 
   getProducts(): Observable<PagedResponse<ProductSummary>> {
