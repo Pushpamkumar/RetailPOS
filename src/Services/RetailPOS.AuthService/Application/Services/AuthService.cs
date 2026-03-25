@@ -12,6 +12,8 @@ public class AuthService(IUserRepository userRepository, ITokenService tokenServ
     public async Task<LoginResponseDto> LoginAsync(LoginRequestDto dto, string? ipAddress = null, CancellationToken cancellationToken = default)
     {
         var normalized = dto.Username.Trim();
+        // Store staff can sign in with email, mobile, or employee code; the lookup
+        // order keeps the login field flexible without separate endpoints.
         var user = normalized.Contains('@')
             ? await userRepository.GetByEmailAsync(normalized, cancellationToken)
             : await userRepository.GetByMobileAsync(normalized, cancellationToken) ?? await userRepository.GetByEmployeeCodeAsync(normalized, cancellationToken);
@@ -36,6 +38,8 @@ public class AuthService(IUserRepository userRepository, ITokenService tokenServ
         var refresh = tokenService.GenerateRefreshToken();
         user.AddRefreshToken(new RefreshToken
         {
+            // Persist only the hashed refresh token so database exposure does not leak
+            // bearer credentials that are still valid on the client.
             Token = refresh.hashed,
             ExpiresAt = refresh.expiresAt,
             IpAddress = ipAddress
@@ -133,6 +137,8 @@ public class AuthService(IUserRepository userRepository, ITokenService tokenServ
         var existing = await userRepository.GetActiveShiftAsync(userId, dto.StoreId, cancellationToken);
         if (existing is not null)
         {
+            // Reuse the open shift instead of creating duplicates when the client
+            // retries or refreshes after a successful start-shift call.
             return existing.ShiftId;
         }
 

@@ -24,6 +24,10 @@ body {
   color: var(--ink);
 }
 
+.mat-icon {
+  flex-shrink: 0;
+}
+
 .page-shell {
   min-height: 100vh;
   padding: 24px;
@@ -96,6 +100,12 @@ body {
   text-decoration: none;
 }
 
+.inline-link-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .tiny {
   font-size: 12px;
 }
@@ -155,6 +165,15 @@ body {
   justify-content: center;
   align-items: center;
   gap: 8px;
+}
+
+.btn .mat-icon,
+.nav-pill .mat-icon,
+.auth-links .mat-icon,
+.chip .mat-icon {
+  width: 20px;
+  height: 20px;
+  font-size: 20px;
 }
 
 .btn.secondary {
@@ -250,6 +269,7 @@ input:focus, select:focus {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   padding: 12px 18px;
   border-radius: 999px;
   border: 1px solid var(--border);
@@ -305,6 +325,19 @@ input:focus, select:focus {
   font-size: 13px;
   font-weight: 700;
   color: rgba(31, 41, 51, 0.76);
+}
+
+.label-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.label-with-icon .mat-icon {
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+  color: var(--accent-deep);
 }
 
 .check-row {
@@ -499,6 +532,16 @@ input:focus, select:focus {
 
 .toast-card.info .toast-dot {
   background: var(--info-ink);
+}
+
+.modal-close {
+  font-size: 0;
+}
+
+.modal-close .mat-icon {
+  width: 24px;
+  height: 24px;
+  font-size: 24px;
 }
 
 @keyframes highlight-pop {

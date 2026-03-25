@@ -50,6 +50,8 @@ public class BillingService(
         item.Recalculate();
 
         bill.AddItem(item);
+        // Reserve inventory as soon as the item lands in the cart so parallel checkouts
+        // do not oversell the same stock before payment is completed.
         await inventoryClient.ReserveStockAsync(product.ProductId, storeId, dto.Qty, cancellationToken);
         await repository.UpdateBillAsync(bill, cancellationToken);
         await repository.SaveChangesAsync(cancellationToken);
@@ -73,6 +75,8 @@ public class BillingService(
         var item = bill.Items.FirstOrDefault(x => x.BillItemId == itemId)
             ?? throw new PosApiException(PosErrors.BILL_004, StatusCodes.Status404NotFound, "Bill not found or does not belong to this store");
         bill.RemoveItem(itemId);
+        // Releasing the reservation keeps inventory in sync with cart edits before the
+        // bill is finalized.
         await inventoryClient.ReleaseStockAsync(item.ProductId, bill.StoreId, item.Qty, cancellationToken);
         await repository.UpdateBillAsync(bill, cancellationToken);
         await repository.SaveChangesAsync(cancellationToken);
@@ -111,6 +115,8 @@ public class BillingService(
             throw new PosApiException(PosErrors.BILL_007, StatusCodes.Status400BadRequest, "Reference number required for card/UPI payment");
         }
 
+        // Unknown values fall back to cash to keep the API tolerant of client casing
+        // issues while still persisting a valid enum.
         var mode = Enum.TryParse<PaymentMode>(dto.PaymentMode, true, out var parsedMode) ? parsedMode : PaymentMode.Cash;
         bill.AddPayment(new Payment
         {
@@ -136,6 +142,8 @@ public class BillingService(
 
         var billNumber = await billNumberService.GenerateAsync(bill.StoreId, $"STR{bill.StoreId:000}", cancellationToken);
         bill.Finalize(billNumber);
+        // Physical stock is deducted only after the sale is fully paid and finalized;
+        // until then the reserved bucket acts as the protection against overselling.
         await inventoryClient.DeductStockAsync(bill.StoreId, bill.Items.Select(x => new StockMovementDto(x.ProductId, x.Qty)).ToArray(), cancellationToken);
         await repository.SaveChangesAsync(cancellationToken);
         return receiptBuilder.Build(bill);

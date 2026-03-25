@@ -37,7 +37,10 @@ type LoginRole = "Cashier" | "StoreManager" | "Admin" | "InventoryClerk" | "Regi
 
         <div class="stack-card auth-role-card">
           <div class="list-row">
-            <strong>{{ selectedRoleLabel }}</strong>
+            <strong class="label-with-icon">
+              <mat-icon aria-hidden="true">{{ selectedRoleIcon }}</mat-icon>
+              <span>{{ selectedRoleLabel }}</span>
+            </strong>
             <span class="chip success">Selected role</span>
           </div>
           <div class="muted">{{ selectedRoleHelp }}</div>
@@ -53,25 +56,37 @@ type LoginRole = "Cashier" | "StoreManager" | "Admin" | "InventoryClerk" | "Regi
               <strong>Attempts ready to reset</strong>
               <div class="muted">Cooldown is complete. Reset to restore the full 5 attempts.</div>
             </div>
-            <button class="btn secondary" type="button" (click)="resetAttempts()">Reset attempts</button>
+            <button class="btn secondary" type="button" (click)="resetAttempts()">
+              <mat-icon aria-hidden="true">restart_alt</mat-icon>
+              <span>Reset attempts</span>
+            </button>
           </div>
         </div>
 
         <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="grid form-grid">
           <div class="field">
-            <label>Account</label>
+            <label class="label-with-icon">
+              <mat-icon aria-hidden="true">account_circle</mat-icon>
+              <span>Account</span>
+            </label>
             <input formControlName="username" placeholder="Email / mobile / employee code" autocomplete="username" />
           </div>
 
           <div class="field">
-            <label>Role to enter</label>
+            <label class="label-with-icon">
+              <mat-icon aria-hidden="true">badge</mat-icon>
+              <span>Role to enter</span>
+            </label>
             <select formControlName="role">
               <option *ngFor="let option of roleOptions" [ngValue]="option.value">{{ option.label }}</option>
             </select>
           </div>
 
           <div class="field">
-            <label>Password</label>
+            <label class="label-with-icon">
+              <mat-icon aria-hidden="true">lock</mat-icon>
+              <span>Password</span>
+            </label>
             <div class="password-row">
               <input
                 [type]="passwordVisible ? 'text' : 'password'"
@@ -80,8 +95,14 @@ type LoginRole = "Cashier" | "StoreManager" | "Admin" | "InventoryClerk" | "Regi
                 autocomplete="current-password"
                 maxlength="64"
               />
-              <button class="btn secondary password-toggle" type="button" (click)="passwordVisible = !passwordVisible">
-                {{ passwordVisible ? "Hide" : "Show" }}
+              <button
+                class="btn secondary password-toggle"
+                type="button"
+                [attr.aria-label]="passwordVisible ? 'Hide password' : 'Show password'"
+                (click)="passwordVisible = !passwordVisible"
+              >
+                <mat-icon aria-hidden="true">{{ passwordVisible ? "visibility_off" : "visibility" }}</mat-icon>
+                <span>{{ passwordVisible ? "Hide" : "Show" }}</span>
               </button>
             </div>
             <div class="muted tiny">Password policy: 8 to 64 characters. Use a strong unique password.</div>
@@ -99,7 +120,8 @@ type LoginRole = "Cashier" | "StoreManager" | "Admin" | "InventoryClerk" | "Regi
           </div>
 
         <button class="btn" type="submit" [disabled]="loginForm.invalid || isLocked || needsManualReset || loading">
-          {{ loading ? "Signing in..." : "Sign In" }}
+          <mat-icon aria-hidden="true">{{ loading ? "hourglass_top" : "login" }}</mat-icon>
+          <span>{{ loading ? "Signing in..." : "Sign In" }}</span>
         </button>
 
           <div class="inline-alert error" *ngIf="errorMessage">{{ errorMessage }}</div>
@@ -189,6 +211,23 @@ export class LoginComponent implements OnInit, OnDestroy {
         return "Read-only oversight for dashboards and reports across the store.";
       default:
         return "Pick the role that matches your account.";
+    }
+  }
+
+  get selectedRoleIcon(): string {
+    switch (this.loginForm.controls.role.value as LoginRole) {
+      case "Cashier":
+        return "point_of_sale";
+      case "StoreManager":
+        return "store";
+      case "Admin":
+        return "admin_panel_settings";
+      case "InventoryClerk":
+        return "inventory_2";
+      case "RegionalManager":
+        return "travel_explore";
+      default:
+        return "badge";
     }
   }
 
