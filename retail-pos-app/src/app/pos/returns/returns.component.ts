@@ -26,6 +26,12 @@ interface ReturnLine {
         <p class="section-caption">Load a completed bill, choose the eligible items, and initiate the return flow.</p>
       </div>
 
+      <div class="nav-cluster" style="margin-bottom:16px;">
+        <a class="nav-pill" routerLink="/pos/billing">Billing</a>
+        <a class="nav-pill" routerLink="/pos/history">History</a>
+        <a class="nav-pill accent" routerLink="/pos/returns">Returns</a>
+      </div>
+
       <div class="grid" style="grid-template-columns:.9fr 1.1fr;align-items:start;">
         <div class="panel">
           <div class="panel-header">

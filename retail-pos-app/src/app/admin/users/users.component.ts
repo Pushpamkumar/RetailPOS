@@ -23,7 +23,7 @@ import { AdminApiService, UserSummary } from "../services/admin-api.service";
           <p class="muted">{{ users.length }} user(s) visible for this store.</p>
         </div>
         <div class="users-actions">
-          <button class="btn" type="button" (click)="openForm()">
+          <button class="btn" type="button" *ngIf="isAdmin" (click)="openForm()">
             <mat-icon aria-hidden="true">person_add</mat-icon>
             <span>Create User</span>
           </button>
@@ -46,7 +46,22 @@ import { AdminApiService, UserSummary } from "../services/admin-api.service";
             <span class="chip" [class.success]="user.isActive">{{ user.isActive ? "Active" : "Inactive" }}</span>
           </div>
           <div class="muted">{{ user.roleName }} - {{ user.employeeCode }}</div>
-          <div>{{ user.email || user.mobile || "-" }}</div>
+          <div>{{ getContactLine(user) }}</div>
+          <div class="users-card-actions" *ngIf="isAdmin">
+            <button class="btn secondary" type="button" (click)="openEditForm(user)">
+              <mat-icon aria-hidden="true">edit</mat-icon>
+              <span>Update</span>
+            </button>
+            <button
+              class="btn danger"
+              type="button"
+              [disabled]="isSaving && pendingDeleteUserId === user.userId"
+              (click)="deleteUser(user)"
+            >
+              <mat-icon aria-hidden="true">{{ isSaving && pendingDeleteUserId === user.userId ? "hourglass_top" : "delete" }}</mat-icon>
+              <span>{{ isSaving && pendingDeleteUserId === user.userId ? "Deleting..." : "Delete" }}</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -61,11 +76,15 @@ import { AdminApiService, UserSummary } from "../services/admin-api.service";
       >
         <div class="panel-header users-modal-header">
           <div>
-            <h3 id="users-form-title">Create Staff Account</h3>
-            <p class="muted">Employee code should be uppercase. Passwords must match and meet backend complexity rules.</p>
+            <h3 id="users-form-title">{{ isEditing ? "Update Staff Account" : "Create Staff Account" }}</h3>
+            <p class="muted">
+              {{ isEditing
+                ? "Update name, contact details, role, or active state for this staff account."
+                : "Employee code should be uppercase. Passwords must match and meet backend complexity rules." }}
+            </p>
           </div>
           <div class="users-modal-actions">
-            <span class="chip" *ngIf="isSaving">Creating...</span>
+            <span class="chip" *ngIf="isSaving">{{ isEditing ? "Saving..." : "Creating..." }}</span>
             <button
               class="modal-close"
               type="button"
@@ -80,7 +99,7 @@ import { AdminApiService, UserSummary } from "../services/admin-api.service";
         <form [formGroup]="form" (ngSubmit)="save()" class="grid form-grid">
           <div class="field">
             <label>Employee code</label>
-            <input formControlName="employeeCode" placeholder="EMP001" />
+            <input formControlName="employeeCode" placeholder="EMP001" [readonly]="isEditing" />
           </div>
           <div class="field">
             <label>Full name</label>
@@ -104,11 +123,17 @@ import { AdminApiService, UserSummary } from "../services/admin-api.service";
               <option [ngValue]="5">RegionalManager</option>
             </select>
           </div>
-          <div class="field">
+          <div class="field" *ngIf="isEditing">
+            <label class="check-row">
+              <input type="checkbox" formControlName="isActive" />
+              <span>Account active</span>
+            </label>
+          </div>
+          <div class="field" *ngIf="!isEditing">
             <label>Password</label>
             <input formControlName="password" type="password" placeholder="Password" />
           </div>
-          <div class="field">
+          <div class="field" *ngIf="!isEditing">
             <label>Confirm password</label>
             <input formControlName="confirmPassword" type="password" placeholder="Confirm password" />
           </div>
@@ -116,8 +141,8 @@ import { AdminApiService, UserSummary } from "../services/admin-api.service";
             Email or mobile is required.
           </div>
           <button class="btn" type="submit" [disabled]="isSaving">
-            <mat-icon aria-hidden="true">{{ isSaving ? "hourglass_top" : "person_add" }}</mat-icon>
-            <span>Create User</span>
+            <mat-icon aria-hidden="true">{{ isSaving ? "hourglass_top" : (isEditing ? "save" : "person_add") }}</mat-icon>
+            <span>{{ isEditing ? "Update User" : "Create User" }}</span>
           </button>
         </form>
       </div>
@@ -142,6 +167,17 @@ import { AdminApiService, UserSummary } from "../services/admin-api.service";
 
     .users-grid {
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+
+    .users-card-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+
+    .users-card-actions .btn {
+      flex: 1 1 0;
     }
 
     .users-modal-backdrop {
@@ -215,6 +251,8 @@ export class UsersComponent implements OnInit {
   isSaving = false;
   isFormOpen = false;
   hasAttemptedSave = false;
+  editingUser: UserSummary | null = null;
+  pendingDeleteUserId: number | null = null;
 
   readonly form;
 
@@ -230,6 +268,7 @@ export class UsersComponent implements OnInit {
       email: [""],
       mobile: [""],
       roleId: [1, Validators.required],
+      isActive: [true],
       password: ["", [Validators.required, Validators.minLength(8)]],
       confirmPassword: ["", [Validators.required, Validators.minLength(8)]]
     });
@@ -244,8 +283,28 @@ export class UsersComponent implements OnInit {
   }
 
   openForm(): void {
+    this.prepareCreateMode();
+  }
+
+  openEditForm(user: UserSummary): void {
     this.hasAttemptedSave = false;
+    this.editingUser = user;
     this.isFormOpen = true;
+    this.form.reset({
+      employeeCode: user.employeeCode,
+      fullName: user.fullName,
+      email: user.email ?? "",
+      mobile: user.mobile ?? "",
+      roleId: this.getRoleId(user.roleName),
+      isActive: user.isActive,
+      password: "",
+      confirmPassword: ""
+    });
+    this.form.controls.employeeCode.disable();
+    this.form.controls.password.clearValidators();
+    this.form.controls.confirmPassword.clearValidators();
+    this.form.controls.password.updateValueAndValidity();
+    this.form.controls.confirmPassword.updateValueAndValidity();
   }
 
   closeForm(): void {
@@ -264,35 +323,45 @@ export class UsersComponent implements OnInit {
     }
 
     if (!this.hasContact()) {
-      this.notificationService.error("Email or mobile is required to create a user.");
+      this.notificationService.error("Email or mobile is required.");
       return;
     }
 
     const value = this.form.getRawValue();
-    if (value.password !== value.confirmPassword) {
+    if (!this.isEditing && value.password !== value.confirmPassword) {
       this.notificationService.error("Password and confirm password must match.");
       return;
     }
     this.isSaving = true;
 
-    this.adminApi.registerStaff({
-      storeId: this.authService.getStoreId(),
-      employeeCode: value.employeeCode.toUpperCase().trim(),
-      fullName: value.fullName.trim(),
-      email: value.email || null,
-      mobile: value.mobile || null,
-      roleId: value.roleId,
-      password: value.password,
-      confirmPassword: value.confirmPassword
-    }).pipe(
+    const request = this.isEditing && this.editingUser
+      ? this.adminApi.updateUser(this.editingUser.userId, {
+        fullName: value.fullName.trim(),
+        email: value.email.trim() || null,
+        mobile: value.mobile.trim() || null,
+        roleId: value.roleId,
+        isActive: value.isActive
+      })
+      : this.adminApi.registerStaff({
+        storeId: this.authService.getStoreId(),
+        employeeCode: value.employeeCode.toUpperCase().trim(),
+        fullName: value.fullName.trim(),
+        email: value.email.trim() || null,
+        mobile: value.mobile.trim() || null,
+        roleId: value.roleId,
+        password: value.password,
+        confirmPassword: value.confirmPassword
+      });
+
+    request.pipe(
       finalize(() => (this.isSaving = false))
     ).subscribe({
       next: () => {
-        this.notificationService.success("User created successfully.");
+        this.notificationService.success(this.isEditing ? "User updated successfully." : "User created successfully.");
         this.resetFormState();
         this.reload();
       },
-      error: (error) => this.notificationService.error(error?.error?.detail ?? "Failed to create user.")
+      error: (error) => this.notificationService.error(error?.error?.detail ?? (this.isEditing ? "Failed to update user." : "Failed to create user."))
     });
   }
 
@@ -301,12 +370,93 @@ export class UsersComponent implements OnInit {
     return !!value.email.trim() || !!value.mobile.trim();
   }
 
+  deleteUser(user: UserSummary): void {
+    if (!this.isAdmin) {
+      return;
+    }
+
+    if (user.userId === this.authService.getUserId()) {
+      this.notificationService.error("You cannot delete your own signed-in account.");
+      return;
+    }
+
+    if (!window.confirm(`Delete ${user.fullName}? This will deactivate the account.`)) {
+      return;
+    }
+
+    this.isSaving = true;
+    this.pendingDeleteUserId = user.userId;
+    this.adminApi.deactivateUser(user.userId).pipe(
+      finalize(() => {
+        this.isSaving = false;
+        this.pendingDeleteUserId = null;
+      })
+    ).subscribe({
+      next: () => {
+        this.notificationService.success("User deleted successfully.");
+        this.reload();
+      },
+      error: (error) => this.notificationService.error(error?.error?.detail ?? "Failed to delete user.")
+    });
+  }
+
+  getContactLine(user: UserSummary): string {
+    return [user.email, user.mobile].filter((value) => !!value?.trim()).join(" / ") || "-";
+  }
+
   get showContactRequirement(): boolean {
     return this.hasAttemptedSave && !this.hasContact();
   }
 
+  get isEditing(): boolean {
+    return !!this.editingUser;
+  }
+
+  get isAdmin(): boolean {
+    return this.authService.getRole() === "Admin";
+  }
+
+  private prepareCreateMode(): void {
+    this.hasAttemptedSave = false;
+    this.editingUser = null;
+    this.isFormOpen = true;
+    this.form.reset({
+      employeeCode: "",
+      fullName: "",
+      email: "",
+      mobile: "",
+      roleId: 1,
+      isActive: true,
+      password: "",
+      confirmPassword: ""
+    });
+    this.form.controls.employeeCode.enable();
+    this.form.controls.password.setValidators([Validators.required, Validators.minLength(8)]);
+    this.form.controls.confirmPassword.setValidators([Validators.required, Validators.minLength(8)]);
+    this.form.controls.password.updateValueAndValidity();
+    this.form.controls.confirmPassword.updateValueAndValidity();
+  }
+
+  private getRoleId(roleName: string): number {
+    switch (roleName) {
+      case "Cashier":
+        return 1;
+      case "StoreManager":
+        return 2;
+      case "Admin":
+        return 3;
+      case "InventoryClerk":
+        return 4;
+      case "RegionalManager":
+        return 5;
+      default:
+        return 1;
+    }
+  }
+
   private resetFormState(): void {
     this.hasAttemptedSave = false;
+    this.editingUser = null;
     this.isFormOpen = false;
     this.form.reset({
       employeeCode: "",
@@ -314,8 +464,14 @@ export class UsersComponent implements OnInit {
       email: "",
       mobile: "",
       roleId: 1,
+      isActive: true,
       password: "",
       confirmPassword: ""
     });
+    this.form.controls.employeeCode.enable();
+    this.form.controls.password.setValidators([Validators.required, Validators.minLength(8)]);
+    this.form.controls.confirmPassword.setValidators([Validators.required, Validators.minLength(8)]);
+    this.form.controls.password.updateValueAndValidity();
+    this.form.controls.confirmPassword.updateValueAndValidity();
   }
 }

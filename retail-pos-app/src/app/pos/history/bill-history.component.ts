@@ -22,6 +22,12 @@ import { CartService } from "../services/cart.service";
       </div>
 
       <div class="nav-cluster" style="margin-bottom:16px;">
+        <a class="nav-pill" routerLink="/pos/billing">Billing</a>
+        <a class="nav-pill accent" routerLink="/pos/history">History</a>
+        <a class="nav-pill" routerLink="/pos/returns">Returns</a>
+      </div>
+
+      <div class="nav-cluster" style="margin-bottom:16px;">
         <button class="nav-pill" [class.is-active]="tab === 'history'" type="button" (click)="tab = 'history'">Completed Bills</button>
         <button class="nav-pill" [class.is-active]="tab === 'held'" type="button" (click)="tab = 'held'; loadHeld()">Held Bills</button>
       </div>

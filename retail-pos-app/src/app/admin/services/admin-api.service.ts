@@ -130,6 +130,14 @@ export interface UserSummary {
   createdAt: string;
 }
 
+export interface UpdateUserRequest {
+  fullName: string;
+  email?: string | null;
+  mobile?: string | null;
+  roleId: number;
+  isActive: boolean;
+}
+
 @Injectable({ providedIn: "root" })
 export class AdminApiService {
   constructor(private http: HttpClient) {}
@@ -180,5 +188,13 @@ export class AdminApiService {
 
   getUsers(storeId: number): Observable<PagedResponse<UserSummary>> {
     return this.http.get<PagedResponse<UserSummary>>(`/gateway/auth/users?storeId=${storeId}&page=1&pageSize=50`);
+  }
+
+  updateUser(userId: number, payload: UpdateUserRequest): Observable<UserSummary> {
+    return this.http.put<UserSummary>(`/gateway/auth/users/${userId}`, payload);
+  }
+
+  deactivateUser(userId: number): Observable<unknown> {
+    return this.http.post(`/gateway/auth/users/${userId}/deactivate`, {});
   }
 }
