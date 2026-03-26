@@ -112,7 +112,9 @@ import { AdminApiService, UserSummary } from "../services/admin-api.service";
             <label>Confirm password</label>
             <input formControlName="confirmPassword" type="password" placeholder="Confirm password" />
           </div>
-          <div class="inline-alert error" *ngIf="!hasContact()">Email or mobile is required.</div>
+          <div class="inline-alert error" *ngIf="showContactRequirement">
+            Email or mobile is required.
+          </div>
           <button class="btn" type="submit" [disabled]="isSaving">
             <mat-icon aria-hidden="true">{{ isSaving ? "hourglass_top" : "person_add" }}</mat-icon>
             <span>Create User</span>
@@ -168,7 +170,7 @@ import { AdminApiService, UserSummary } from "../services/admin-api.service";
       height: 42px;
       border: 1px solid var(--border);
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.9);
+      background: var(--surface-overlay);
       color: var(--ink);
       font-size: 28px;
       line-height: 1;
@@ -182,7 +184,7 @@ import { AdminApiService, UserSummary } from "../services/admin-api.service";
     .modal-close:hover {
       transform: translateY(-1px);
       box-shadow: var(--shadow);
-      background: #fff;
+      background: var(--surface-overlay-strong);
     }
 
     @media (max-width: 700px) {
@@ -212,6 +214,7 @@ export class UsersComponent implements OnInit {
   users: UserSummary[] = [];
   isSaving = false;
   isFormOpen = false;
+  hasAttemptedSave = false;
 
   readonly form;
 
@@ -241,16 +244,19 @@ export class UsersComponent implements OnInit {
   }
 
   openForm(): void {
+    this.hasAttemptedSave = false;
     this.isFormOpen = true;
   }
 
   closeForm(): void {
     if (!this.isSaving) {
-      this.isFormOpen = false;
+      this.resetFormState();
     }
   }
 
   save(): void {
+    this.hasAttemptedSave = true;
+
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       this.notificationService.error("Fill the required user fields before saving.");
@@ -283,16 +289,7 @@ export class UsersComponent implements OnInit {
     ).subscribe({
       next: () => {
         this.notificationService.success("User created successfully.");
-        this.form.patchValue({
-          employeeCode: "",
-          fullName: "",
-          email: "",
-          mobile: "",
-          roleId: 1,
-          password: "",
-          confirmPassword: ""
-        });
-        this.closeForm();
+        this.resetFormState();
         this.reload();
       },
       error: (error) => this.notificationService.error(error?.error?.detail ?? "Failed to create user.")
@@ -302,5 +299,23 @@ export class UsersComponent implements OnInit {
   hasContact(): boolean {
     const value = this.form.getRawValue();
     return !!value.email.trim() || !!value.mobile.trim();
+  }
+
+  get showContactRequirement(): boolean {
+    return this.hasAttemptedSave && !this.hasContact();
+  }
+
+  private resetFormState(): void {
+    this.hasAttemptedSave = false;
+    this.isFormOpen = false;
+    this.form.reset({
+      employeeCode: "",
+      fullName: "",
+      email: "",
+      mobile: "",
+      roleId: 1,
+      password: "",
+      confirmPassword: ""
+    });
   }
 }

@@ -198,7 +198,7 @@ import { AdminApiService } from "../../admin/services/admin-api.service";
       height: 42px;
       border: 1px solid var(--border);
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.9);
+      background: var(--surface-overlay);
       color: var(--ink);
       font-size: 28px;
       line-height: 1;
@@ -212,7 +212,7 @@ import { AdminApiService } from "../../admin/services/admin-api.service";
     .modal-close:hover {
       transform: translateY(-1px);
       box-shadow: var(--shadow);
-      background: #fff;
+      background: var(--surface-overlay-strong);
     }
 
     @media (max-width: 900px) {
