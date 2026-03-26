@@ -44,6 +44,8 @@ builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddDbContext<AdminDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
         sql => sql.EnableRetryOnFailure(3)));
+// The admin service validates tokens with the shared public key, so it never needs
+// access to the signing private key used by the auth service.
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -66,6 +68,8 @@ builder.Services.AddScoped<IInventoryService, InventoryService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 
 var app = builder.Build();
+// Keep exception/correlation middleware early so downstream logs and responses
+// include the same request context, including auth failures.
 app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseSerilogRequestLogging();
@@ -83,6 +87,8 @@ app.Run();
 static SecurityKey LoadPublicKey(string publicKeyPath)
 {
     using var rsa = RSA.Create();
+    // Import the PEM and immediately export public parameters so the returned key
+    // is detached from the disposable RSA instance.
     rsa.ImportFromPem(File.ReadAllText(publicKeyPath));
     return new RsaSecurityKey(rsa.ExportParameters(false));
 }

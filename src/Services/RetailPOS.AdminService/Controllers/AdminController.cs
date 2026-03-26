@@ -13,6 +13,8 @@ namespace RetailPOS.AdminService.Controllers;
 public class AdminController(IInventoryService inventoryService, IReportService reportService) : ControllerBase
 {
     [HttpGet("inventory/stock")]
+    // This is used by other internal services during billing flows, so it stays open
+    // even though the rest of the admin surface is role-protected.
     [AllowAnonymous]
     public async Task<ActionResult<StockDto>> Stock([FromQuery] int productId, [FromQuery] int storeId, CancellationToken cancellationToken)
         => Ok(await inventoryService.GetStockAsync(productId, storeId, cancellationToken));
@@ -21,6 +23,8 @@ public class AdminController(IInventoryService inventoryService, IReportService 
     [AllowAnonymous]
     public async Task<ActionResult<ApiSuccessResponse>> Reserve([FromBody] InventoryMovementRequest dto, CancellationToken cancellationToken)
     {
+        // Reservation reduces sellable stock immediately but does not touch on-hand
+        // quantity until the bill is finalized.
         await inventoryService.ReserveStockAsync(dto.ProductId, dto.StoreId, dto.Qty, cancellationToken);
         return Ok(new ApiSuccessResponse());
     }
@@ -45,6 +49,8 @@ public class AdminController(IInventoryService inventoryService, IReportService 
     [AllowAnonymous]
     public async Task<ActionResult<ApiSuccessResponse>> CreditReturn([FromBody] DeductRequest dto, CancellationToken cancellationToken)
     {
+        // Returns are credited back as physical stock because the reservation was
+        // already consumed when the original bill was finalized.
         await inventoryService.CreditReturnStockAsync(dto.StoreId, dto.Items.Select(x => new StockMovementDto(x.ProductId, x.Qty)).ToArray(), cancellationToken);
         return Ok(new ApiSuccessResponse());
     }

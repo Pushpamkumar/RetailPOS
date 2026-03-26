@@ -68,6 +68,8 @@ public class ProductService(IProductRepository repository) : IProductService
         product.CategoryId = dto.CategoryId;
         product.UOM = dto.UOM;
         product.MRP = dto.MRP;
+        // Price changes are routed through the domain helper so price history and
+        // audit metadata stay consistent with the current selling price.
         product.UpdatePrice(dto.SellingPrice, userId, dto.PriceChangeReason);
         product.CostPrice = dto.CostPrice;
         product.TaxId = dto.TaxId;
@@ -84,6 +86,7 @@ public class ProductService(IProductRepository repository) : IProductService
     {
         var product = await repository.GetByIdWithDetailsAsync(id, cancellationToken)
             ?? throw new PosApiException(PosErrors.CAT_001, StatusCodes.Status404NotFound, "Product not found for given ID or barcode");
+        // Products are soft-deactivated so historical bills can still reference them.
         product.IsActive = false;
         await repository.UpdateAsync(product, cancellationToken);
         await repository.SaveChangesAsync(cancellationToken);

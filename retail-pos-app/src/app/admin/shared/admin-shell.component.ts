@@ -7,6 +7,7 @@ type ShellRole = "Cashier" | "StoreManager" | "Admin" | "InventoryClerk" | "Regi
 interface ShellNavItem {
   label: string;
   route: string;
+  icon: string;
   roles: ShellRole[];
 }
 
@@ -35,10 +36,17 @@ interface ShellNavItem {
             routerLinkActive="is-active"
           class="nav-pill"
           >
-            {{ item.label }}
+            <mat-icon aria-hidden="true">{{ item.icon }}</mat-icon>
+            <span>{{ item.label }}</span>
           </a>
-          <a class="nav-pill accent" routerLink="/pos/billing" *ngIf="authService.getRole() === 'Cashier' || authService.getRole() === 'StoreManager' || authService.getRole() === 'Admin'">Open POS</a>
-          <button class="btn danger" type="button" (click)="authService.logout()">Logout</button>
+          <a class="nav-pill accent" routerLink="/pos/billing" *ngIf="authService.getRole() === 'Cashier' || authService.getRole() === 'StoreManager' || authService.getRole() === 'Admin'">
+            <mat-icon aria-hidden="true">point_of_sale</mat-icon>
+            <span>Open POS</span>
+          </a>
+          <button class="btn danger" type="button" (click)="authService.logout()">
+            <mat-icon aria-hidden="true">logout</mat-icon>
+            <span>Logout</span>
+          </button>
         </div>
       </div>
 
@@ -48,13 +56,13 @@ interface ShellNavItem {
 })
 export class AdminShellComponent implements OnInit {
   private readonly navConfig: ShellNavItem[] = [
-    { label: "Dashboard", route: "/admin/dashboard", roles: ["StoreManager", "Admin", "RegionalManager"] },
-    { label: "Products", route: "/admin/products", roles: ["StoreManager", "Admin"] },
-    { label: "Inventory", route: "/admin/inventory", roles: ["StoreManager", "Admin", "InventoryClerk"] },
-    { label: "Reports", route: "/admin/reports", roles: ["StoreManager", "Admin", "RegionalManager"] },
-    { label: "Users", route: "/admin/users", roles: ["Admin"] },
-    { label: "Onboarding", route: "/auth/signup", roles: ["Admin"] },
-    { label: "POS", route: "/pos/billing", roles: ["Cashier", "StoreManager", "Admin"] }
+    { label: "Dashboard", route: "/admin/dashboard", icon: "dashboard", roles: ["StoreManager", "Admin", "RegionalManager"] },
+    { label: "Products", route: "/admin/products", icon: "sell", roles: ["StoreManager", "Admin"] },
+    { label: "Inventory", route: "/admin/inventory", icon: "inventory_2", roles: ["StoreManager", "Admin", "InventoryClerk"] },
+    { label: "Reports", route: "/admin/reports", icon: "bar_chart", roles: ["StoreManager", "Admin", "RegionalManager"] },
+    { label: "Users", route: "/admin/users", icon: "group", roles: ["Admin"] },
+    { label: "Onboarding", route: "/auth/signup", icon: "person_add", roles: ["Admin"] },
+    { label: "POS", route: "/pos/billing", icon: "point_of_sale", roles: ["Cashier", "StoreManager", "Admin"] }
   ];
 
   constructor(public authService: AuthService, private router: Router) {}

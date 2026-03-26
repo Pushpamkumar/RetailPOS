@@ -44,6 +44,8 @@ public class InventoryService(IInventoryRepository repository, IConfiguration co
 
     public async Task DeductStockAsync(int storeId, IReadOnlyCollection<StockMovementDto> items, CancellationToken cancellationToken = default)
     {
+        // Apply all line-item deductions first and commit once so the bill finalization
+        // flow persists inventory changes as a single unit of work.
         foreach (var item in items)
         {
             var inventory = await GetOrCreateInventoryAsync(storeId, item.ProductId, cancellationToken);
@@ -79,6 +81,8 @@ public class InventoryService(IInventoryRepository repository, IConfiguration co
             SourceDocument = dto.SourceDocument,
             Notes = dto.Notes,
             AdjustedBy = userId,
+            // Large variances stay in Draft so a later approval workflow can review
+            // them before they affect physical stock.
             Status = Math.Abs(dto.Quantity) > threshold ? AdjustmentStatus.Draft : AdjustmentStatus.Posted,
             PostedAt = Math.Abs(dto.Quantity) > threshold ? null : DateTime.UtcNow
         };
@@ -117,6 +121,9 @@ public class InventoryService(IInventoryRepository repository, IConfiguration co
         {
             return inventory;
         }
+
+        // Stock records are created lazily so downstream services can reserve/deduct
+        // inventory without requiring an explicit setup step per product/store pair.
         inventory = new Inventory { StoreId = storeId, ProductId = productId, StockOnHand = 0, ReservedQty = 0, ReorderLevel = 0 };
         await repository.AddInventoryAsync(inventory, cancellationToken);
         return inventory;

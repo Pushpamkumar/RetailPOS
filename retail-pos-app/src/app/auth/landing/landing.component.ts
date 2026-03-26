@@ -33,12 +33,18 @@ import { WorkspaceContextService } from "../../core/services/workspace-context.s
 
         <form [formGroup]="form" (ngSubmit)="save()" class="grid form-grid">
           <div class="field">
-            <label>Store code</label>
+            <label class="label-with-icon">
+              <mat-icon aria-hidden="true">storefront</mat-icon>
+              <span>Store code</span>
+            </label>
             <input formControlName="storeCode" placeholder="STR001" maxlength="20" />
           </div>
 
           <div class="field">
-            <label>Terminal code</label>
+            <label class="label-with-icon">
+              <mat-icon aria-hidden="true">point_of_sale</mat-icon>
+              <span>Terminal code</span>
+            </label>
             <input formControlName="terminalCode" placeholder="TERM-01" maxlength="20" />
           </div>
 
@@ -47,9 +53,18 @@ import { WorkspaceContextService } from "../../core/services/workspace-context.s
             <span class="muted">Current terminal: {{ currentTerminal || "Not set" }}</span>
           </div>
 
-          <button class="btn" type="submit">Save Context & Continue</button>
-          <button class="btn secondary" type="button" (click)="router.navigate(['/auth/login'])">Skip to Login</button>
-          <a class="auth-links" routerLink="/auth/forgot-password">Forgot your password?</a>
+          <button class="btn" type="submit">
+            <mat-icon aria-hidden="true">save</mat-icon>
+            <span>Save Context & Continue</span>
+          </button>
+          <button class="btn secondary" type="button" (click)="router.navigate(['/auth/login'])">
+            <mat-icon aria-hidden="true">login</mat-icon>
+            <span>Skip to Login</span>
+          </button>
+          <a class="auth-links inline-link-with-icon" routerLink="/auth/forgot-password">
+            <mat-icon aria-hidden="true">help</mat-icon>
+            <span>Forgot your password?</span>
+          </a>
         </form>
       </div>
     </div>
